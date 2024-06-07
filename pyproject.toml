@@ -1,0 +1,19 @@
+[build-system]
+requires = ["scikit-build-core", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "prebio"
+version = "0.0.1"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.scikit-build]
+logging.level = "INFO"
+build-dir="/workspaces/prebio-build"
+sdist.exclude = ["*.cpp", "*.hpp"]
+
+[tool.scikit-build.cmake.define]
+CMAKE_EXPORT_COMPILE_COMMANDS = "TRUE"
+CMAKE_CXX_COMPILER = "g++-10"

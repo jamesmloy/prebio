@@ -1,0 +1,10 @@
+channels:
+  - default
+  - conda-forge
+dependencies:
+  - numpy
+  - cmake
+  - pydantic
+  - git
+  - pybind11
+  - pandas
