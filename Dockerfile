@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as build_env
+FROM --platform=linux/amd64 ubuntu:20.04 as build_env
 
 RUN apt-get update && \
     apt-get install -y \
@@ -27,10 +27,16 @@ WORKDIR /deps
 
 RUN git clone https://github.com/project-gemmi/gemmi.git && \
     mkdir gemmi/build && cd gemmi/build && \
-    cmake -DPython_EXECUTABLE=$(which python) -DCMAKE_CXX_COMPILER=g++-10 -DUSE_PYTHON=ON .. && \
-    make -j 5 &&  make install
+    cmake \
+        -GNinja \
+        -DPython_EXECUTABLE=$(which python) \
+        -DCMAKE_CXX_COMPILER=g++-10 \
+        -DUSE_PYTHON=ON \
+        .. && \
+    ninja &&  ninja install
 
-FROM build_env as build_prebio
+
+FROM --platform=linux/amd64 build_env as build_prebio
 
 WORKDIR /build-prebio
 COPY ./prebio ./prebio
@@ -49,7 +55,8 @@ RUN conda-pack -o /tmp/prod_env.tar.gz && \
 
 RUN /venv/bin/conda-unpack
 
-FROM ubuntu:20.04 as final
+
+FROM --platform=linux/amd64 ubuntu:20.04 as final
 
 COPY --from=build_prebio /venv /venv
 COPY --from=build_prebio /usr/local/include/. /usr/local/include
@@ -58,18 +65,22 @@ COPY --from=build_prebio /opt/conda/lib/python3.10/site-packages/gemmi.cpython-3
 
 COPY --from=build_prebio /usr/local/bin/. /usr/local/bin
 COPY --from=build_prebio /usr/local/share/. /usr/local/share
-COPY ./generate_boxes_docker.py .
 COPY --from=build_prebio /build-prebio/dist /prebio/dist
+COPY ./generate_microenvs_docker.py /cli/
 
 ENV PATH=/venv/bin:$PATH
 ENV LD_LIBRARY_PATH /usr/local/lib:/venv/lib
+
 RUN pip3 install /prebio/dist/$(ls /prebio/dist)
 
-FROM final as dev
+WORKDIR /cli
 
-RUN apt-get update --fix-missing && apt-get install -y build-essential git \
-    curl ninja-build g++-10 wget libblas-dev liblapack-dev && \
-    curl -fsSL https://get.docker.com -o get-docker.sh && sh ./get-docker.sh
+
+FROM --platform=linux/amd64 final as dev
+
+RUN apt-get update --fix-missing && \
+    apt-get install -y build-essential git curl ninja-build g++-10 wget libblas-dev liblapack-dev
+RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh ./get-docker.sh
 
 RUN pip uninstall -y prebio && \
     pip install pytest pytest-asyncio mypy scikit-build-core pybind11 cmake \

@@ -60,7 +60,7 @@ def make_collection_plus(
 
 def save_voxelized(
     in_folder: Path, out_folder: Path, the_file: Path, channel_first: bool
-):
+):    
     try:
         snapshots = snapshots_from_cif(the_file)
         vp = VoxelPipeline(
@@ -70,7 +70,9 @@ def save_voxelized(
         )
         boxes = [b for b in vp()]
         to_pickle = {"snapshots": snapshots, "boxes": np.asarray(boxes)}
-        pkl_file = out_folder / the_file.with_suffix(".pkl").name
+
+        suffix = "_ch_first" if channel_first else "_ch_last"
+        pkl_file = out_folder / (the_file.name.split(".", 1)[0] + suffix + ".pkl")
         with pkl_file.open("wb") as f:
             pkl.dump(to_pickle, f)
     except Exception as e:
@@ -95,7 +97,7 @@ def save_graph(in_folder: Path, out_folder: Path, the_file: Path):
             )
             for ss in snapshots
         ]
-        jsonl_file = out_folder / the_file.with_suffix(".jsonl").name
+        jsonl_file = out_folder / (the_file.name.split(".", 1)[0] + ".jsonl")
         jsonl_file.write_text("\n".join(ac_list))
     except Exception as e:
         print(
