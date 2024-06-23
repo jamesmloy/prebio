@@ -11,7 +11,7 @@ def call_generate_boxes(
         f"-v {in_folder.resolve()}:/input "
         f"-v {out_folder.resolve()}:/output "
         f" -t {image} "
-        "python /generate_boxes_docker.py "
+        "python /cli/generate_microenvs_docker.py "
         "--in-folder /input "
         "--out-folder /output"
     )
